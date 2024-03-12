@@ -25,8 +25,8 @@ DATABASE_FILE="db/sqlite/tickers.sqlite"
 TICKERS_SCHEMA_FILE="db/sqlite/tickers_schema.sql"
 
 # ftp://ftp.nasdaqtrader.com/SymbolDirectory/otherlisted.txt and ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt
-curl ftp://ftp.nasdaqtrader.com/SymbolDirectory/otherlisted.txt > $OTHER
-curl ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt > $NASDAQ
+#curl ftp://ftp.nasdaqtrader.com/SymbolDirectory/otherlisted.txt > $OTHER
+#curl ftp://ftp.nasdaqtrader.com/SymbolDirectory/nasdaqlisted.txt > $NASDAQ
 
 
 # Check if sqlite3 is available
@@ -47,12 +47,33 @@ fi
 sqlite3 "$DATABASE_FILE" <<EOF
 .mode csv
 .header on
--- Import only the desired columns
-.import "$NASDAQ" companies
+.separator '|'
+
+-- Import only the desired columns into the staging table
+.import "$NASDAQ" staging_nasdaq
+
+-- Insert data from staging table into the main table, applying REGEXP filter
+INSERT OR IGNORE INTO tickers (symbol, company_name)
+SELECT symbol, company_name FROM staging_nasdaq
+WHERE LOWER(company_name) REGEXP 'ads|inc|common units|representing limited|Com+mon shares|share|american depositary shares|com+mon stock|ordinary shares';
 EOF
-echo "Data imported from '$NASDAQ'."
+echo "Data imported from '$NASDAQ' into the staging table."
 
 # 2. Process other data
+sqlite3 "$DATABASE_FILE" <<EOF
+.mode csv
+.header on
+.separator '|'
+
+-- Import only the desired columns into the staging table
+.import "$OTHER" staging_other
+
+-- Insert data from staging table into the main table, applying REGEXP filter
+INSERT OR IGNORE INTO tickers (symbol, company_name)
+SELECT symbol, company_name FROM staging_other
+WHERE LOWER(company_name) REGEXP 'ads|inc|common units|representing limited|Com+mon shares|share|american depositary shares|com+mon stock|ordinary shares';
+EOF
+echo "Data imported from '$OTHER' into the staging table."
 
 
 
