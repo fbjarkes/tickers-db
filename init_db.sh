@@ -43,8 +43,8 @@ if [ ! -f "$DATABASE_FILE" ]; then
 fi
 
 
-# 1. Process nasdaq data
-sqlite3 "$DATABASE_FILE" <<EOF
+# 1. Process nasdaq data (ignore errors due to extra columns warning while importing)
+sqlite3 "$DATABASE_FILE" <<EOF 2>/dev/null
 .mode csv
 .header on
 .separator '|'
@@ -59,8 +59,8 @@ WHERE LOWER(company_name) REGEXP 'ads|inc|common units|representing limited|Com+
 EOF
 echo "Data imported from '$NASDAQ' into the staging table."
 
-# 2. Process other data
-sqlite3 "$DATABASE_FILE" <<EOF
+# 2. Process other data (ignore errors due to extra columns warning while importing)
+sqlite3 "$DATABASE_FILE" <<EOF 2>/dev/null
 .mode csv
 .header on
 .separator '|'
