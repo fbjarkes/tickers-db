@@ -1,20 +1,7 @@
 #!/bin/bash - 
 #===============================================================================
-#
-#          FILE: init_db.sh
-# 
-#         USAGE: ./init_db.sh 
-# 
-#   DESCRIPTION: 
-# 
-#       OPTIONS: ---
-#  REQUIREMENTS: ---
-#          BUGS: ---
-#         NOTES: ---
-#        AUTHOR: YOUR NAME (), 
-#  ORGANIZATION: 
-#       CREATED: 03/12/2024 11:35
-#      REVISION:  ---
+# Initialize (and ovewrite) all stock symbols in 'tickers' table
+# TODO: table and sql stuff in .sql file
 #===============================================================================
 
 set -o nounset                              # Treat unset variables as an error
