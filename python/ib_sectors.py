@@ -5,6 +5,8 @@ from ib_async import Contract, IB, StartupFetch
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
+BATCH_LIMIT = 1000
+
 def get_industry_sector(ib, symbol, exchange="SMART", currency="USD"):
     contract = Contract(symbol=symbol, secType="STK", exchange=exchange, currency=currency)
     contract_details = ib.reqContractDetails(contract)
@@ -37,26 +39,41 @@ def main(args):
         conn.close()
         return
 
-    cursor.execute("SELECT symbol FROM tickers LIMIT 20")
+    cursor.execute("SELECT symbol FROM tickers LIMIT 100")
     rows = cursor.fetchall()
 
+    updates = []
     for row in rows:
         symbol = row[0]
         logging.info(f"Processing symbol: {symbol}")
         industry, sector, sub_category = get_industry_sector(ib, symbol)
         if industry and sector and sub_category:
             logging.info(f"Updating symbol: {symbol} with industry: {industry}, sector: {sector}, sub_category: {sub_category}")
-            update_ticker_info(cursor, symbol, industry, sector, sub_category)
+            updates.append((industry, sector, sub_category, symbol))
+        
+        if len(updates) >= BATCH_LIMIT:
+            cursor.executemany("""
+                UPDATE tickers
+                SET ib_industry = ?, ib_sector = ?, ib_sub_sector = ?
+                WHERE symbol = ?
+            """, updates)
             conn.commit()
+            updates = []
+
+    if updates:
+        cursor.executemany("""
+            UPDATE tickers
+            SET ib_industry = ?, ib_sector = ?, ib_sub_sector = ?
+            WHERE symbol = ?
+        """, updates)
+        conn.commit()
 
     ib.disconnect()
     conn.close()
 
 if __name__ == "__main__":
-    # Copilot keep start
     import sys    
     sys.argv = ['ib_sectors.py', '--host', '192.168.1.51', '--port', '7496', '--db', 'db/sqlite/tickers.sqlite']
-    # Copilot keep end
     
     parser = argparse.ArgumentParser(description='Get industry sector information.')
     parser.add_argument('--host', type=str, required=True, help='Host IP address')
