@@ -17,12 +17,13 @@ def get_industry_sector(ib, symbol, exchange="SMART", currency="USD"):
     logging.warning(f"Could not retrieve contract details for {symbol}.")
     return None, None, None
 
-def update_ticker_info(cursor, symbol, industry, sector, sub_category):
-    cursor.execute("""
+def process_updates(cursor, updates):
+    cursor.executemany("""
         UPDATE tickers
         SET ib_industry = ?, ib_sector = ?, ib_sub_sector = ?
         WHERE symbol = ?
-    """, (industry, sector, sub_category, symbol))
+    """, updates)
+
 
 def main(args):
     try:
@@ -50,27 +51,18 @@ def main(args):
         if industry and sector and sub_category:
             logging.info(f"Updating symbol: {symbol} with industry: {industry}, sector: {sector}, sub_category: {sub_category}")
             updates.append((industry, sector, sub_category, symbol))
-        
+
         if len(updates) >= BATCH_LIMIT:
-            cursor.executemany("""
-                UPDATE tickers
-                SET ib_industry = ?, ib_sector = ?, ib_sub_sector = ?
-                WHERE symbol = ?
-            """, updates)
-            conn.commit()
+            process_updates(cursor, updates)
             updates = []
 
     if updates:
-        cursor.executemany("""
-            UPDATE tickers
-            SET ib_industry = ?, ib_sector = ?, ib_sub_sector = ?
-            WHERE symbol = ?
-        """, updates)
-        conn.commit()
+        process_updates(cursor, updates)
 
     ib.disconnect()
     conn.close()
-
+    
+    
 if __name__ == "__main__":
     import sys    
     sys.argv = ['ib_sectors.py', '--host', '192.168.1.51', '--port', '7496', '--db', 'db/sqlite/tickers.sqlite']
