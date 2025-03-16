@@ -23,8 +23,8 @@ async def get_industry_sector(ib, symbol, exchange="SMART", currency="USD"):
     if contract_details:
         contract_detail = contract_details[0]  # taking the first result
         return contract_detail.industry, contract_detail.category, contract_detail.subcategory
-    logging.warning(f"Could not retrieve contract details for {symbol}.")
-    return None, None, None
+    logging.warning(f"{symbol}: No data found, setting 'N/A'")
+    return "N/A", "N/A", "N/A"
 
 async def process_updates(conn, cursor, updates, chunk_id):
     logging.info(f"Chunk-{chunk_id}: Processing updates for {len(updates)} records in")
@@ -68,7 +68,7 @@ async def main(args):
         conn.close()
         return
 
-    cursor.execute("SELECT symbol FROM tickers WHERE ib_industry IS NULL LIMIT 500")
+    cursor.execute("SELECT symbol FROM tickers WHERE ib_industry IS NULL OR ib_industry = 'N/A'")
     rows = cursor.fetchall()
 
     semaphore = asyncio.Semaphore(IB_CONCURRENCY)
