@@ -87,8 +87,8 @@ async def main(args):
     conn.close()
 
 if __name__ == "__main__":
-    import sys    
-    sys.argv = ['ib_sectors.py', '--host', '192.168.1.51', '--port', '7496', '--db', 'db/sqlite/tickers.sqlite']
+    #import sys    
+    #sys.argv = ['ib_sectors.py', '--host', '192.168.1.51', '--port', '7496', '--db', 'db/sqlite/tickers.sqlite']
     
     parser = argparse.ArgumentParser(description='Get industry sector information.')
     parser.add_argument('--host', type=str, required=True, help='Host IP address')
